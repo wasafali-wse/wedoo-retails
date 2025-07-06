@@ -1,0 +1,193 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Bill #{{ bill.id }}</title>
+<style>
+    @page {
+        size: A5 portrait;
+        margin: 5mm;
+    }
+
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #333;
+        font-size: 13px;
+        margin: 0;
+        padding: 0;
+    }
+
+    header {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    header img {
+        height: 120px;
+    }
+
+    .info-section {
+        display: flex;
+        justify-content: space-between;
+        margin: 5px 10px;
+    }
+
+    .info-box {
+        width: 48%;
+        padding: 4px;
+        box-sizing: border-box;
+    }
+    .info-box-2 {
+        width: 100%;
+        padding: 4px;
+        box-sizing: border-box;
+        margin-top: 10px;
+    }
+
+    .info-box h4 {
+        margin: 0 0 2px;
+        font-size: 15px;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 4px;
+    }
+
+    p {
+        margin: 4px 0;
+    }
+
+    table {
+        width: 95%;
+        margin: 10px auto;
+        border-collapse: collapse;
+    }
+
+    table th,
+    table td {
+        border: 1px solid #ddd;
+        padding: 6px 10px;
+        text-align: left;
+    }
+
+    table th {
+        width: 50%;
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+
+    footer {
+        text-align: center;
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        padding: 10px 0;
+    }
+
+    footer img {
+        height: 80px;
+    }
+
+    footer p {
+        font-size: 11px;
+        margin: 4px 0;
+    }
+
+    @media print {
+        body {
+            margin: 0;
+        }
+        footer {
+            position: fixed;
+            bottom: 0;
+        }
+    }
+</style>
+<script>
+    window.onload = function () {
+        window.print();
+        window.onafterprint = function () {
+            window.close();
+        };
+    };
+</script>
+</head>
+<body>
+
+<header>
+    <img src="{% static 'img/logo.png' %}" alt="Top Logo" />
+</header>
+
+<div class="info-section">
+    <div class="info-box">
+        <h4>Bill Details</h4>
+        <p>
+            <strong>Bill ID:</strong> {{ bill.id }}<br>
+            <strong>Date:</strong> {{ bill.date }}<br>
+            <strong>Description:</strong> {{ bill.description|default:"N/A" }}
+        </p>
+    </div>
+    <div class="info-box">
+        <h4>Vendor Details</h4>
+        <p>
+            <strong>Name:</strong> {{ bill.vendor.name }}<br>
+            <strong>Contact:</strong> {{ bill.vendor.contact }}<br>
+            <strong>Address:</strong> {{ bill.vendor.address|default:"N/A" }}<br>
+            <strong>Account Number:</strong> {{ bill.vendor.AccountNumber|default:"N/A" }}
+        </p>
+    </div>
+</div>
+
+<div class="info-section">
+    <div class="info-box-2">
+        <p>
+            <strong>Net Amount:</strong> Rs{{ bill.net_amount }}/=<br>
+            <strong>Total Paid:</strong> Rs{{ bill.total_paid }}/=<br>
+            <strong>Remaining Due:</strong> Rs{{ bill.remaining_amount }}/=<br>
+        </p>
+    </div>
+</div>
+
+<!-- Optional: List of Payments -->
+{% if bill.payment_set.all %}
+<h4 style="text-align:center;">Payments</h4>
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Credit</th>
+            <th>Debit</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for payment in bill.payment_set.all %}
+        <tr>
+            <td>{{ payment.date }}</td>
+            <td>{{ payment.get_type_display }}</td>
+            <td>
+                {% if payment.credit %}
+                    Rs{{ payment.credit }}/=
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>
+                {% if payment.debit %}
+                    Rs{{ payment.debit }}/=
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<footer>
+    <img src="{% static 'img/light.png' %}" alt="Bottom Logo" />
+    <p>Visit us: <a href="https://waheedsons-engineering.com">waheedsons-engineering.com</a></p>
+</footer>
+
+</body>
+</html>
