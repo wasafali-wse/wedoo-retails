@@ -41,7 +41,7 @@ class Vendor(models.Model):
 class Invoice(models.Model):
     date = models.DateField(default=timezone.now)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    description = models.CharField(blank=True, null=True)
+    
     gross_amount = models.DecimalField(max_digits=10, decimal_places=2)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     net_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -52,6 +52,23 @@ class Invoice(models.Model):
         return total_credit
     def remaining_amount(self):
         return self.net_amount - self.total_paid()
+    
+
+
+class InvoiceItem(models.Model):
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE)
+    description = models.CharField(max_length=255)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    rate = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"Item {self.id} - {self.description}"
+    
+    def save(self, *args, **kwargs):
+        self.amount = self.quantity * self.rate
+        super().save(*args, **kwargs)
+
 
 
 class Bill(models.Model):

@@ -10,10 +10,9 @@ from django.contrib.admin.models import LogEntry
 from pathlib import Path
 from unfold.admin import ModelAdmin
 from django.utils.html import format_html
-from .models import Customer, Invoice, Payment, Vendor, Bill
+from .models import Customer, Invoice, InvoiceItem, Payment, Vendor, Bill
 from django.urls import path, reverse
 from django.utils.html import format_html
-
 from . import views
 from django.shortcuts import redirect
 import csv
@@ -67,7 +66,7 @@ export_selected_payments_as_csv.short_description = "Export selected payments to
 
 
 class CustomerAdmin(ModelAdmin):
-    list_display = ('name', 'contact', 'get_total_outstanding')
+    list_display = ('id','name', 'contact', 'get_total_outstanding')
     search_fields = ('id','name', 'contact')
     list_filter = ('id','date','name', 'contact')
     list_per_page = 10
@@ -80,15 +79,23 @@ class CustomerAdmin(ModelAdmin):
             total_value = 0
         return format_html('<b>Rs{}/=</b>', total_value)
 
+from unfold.admin import StackedInline, TabularInline
+class InvoiceItemInline(TabularInline):  # Use StackedInline for vertical layout
+    model = InvoiceItem
+    fields = ('description', 'quantity', 'rate', 'amount')
+    extra = 1
+    
 
 class InvoiceAdmin(ModelAdmin):
     list_display = (
         'id', 'customer', 'date', 'gross_amount', 'discount', 'net_amount',
         'get_remaining_amount', 'print_link'
     )
-    search_fields = ('id','customer__name', 'description')
-    list_filter = ('id','date', 'customer__name')
+    search_fields = ('id','date','customer__name')
+    list_filter = ('date', 'customer__name','id')
     list_per_page = 10
+    autocomplete_fields = ['customer']
+    inlines = [InvoiceItemInline]
     def get_remaining_amount(self, obj):
         remaining = obj.remaining_amount()
         if isinstance(remaining, (int, float, Decimal)):
@@ -112,7 +119,8 @@ class InvoiceAdmin(ModelAdmin):
     def print_view(self, request, object_id):
         invoice = self.get_object(request, object_id)
         return redirect(reverse('print_invoice_template', args=[invoice.pk]))
-
+    class Media:
+        js = ('js/amount_cal.js',)
 # class PaymentAdmin(ModelAdmin):
 #     list_display = ('id', 'invoice', 'bill', 'date', 'type', 'credit', 'debit')
 #     search_fields = ('id', 'invoice__customer__name', 'invoice__id', 'bill__vendor__name', 'bill__id', 'type')
@@ -121,7 +129,7 @@ class InvoiceAdmin(ModelAdmin):
 
 
 class VendorAdmin(ModelAdmin):
-    list_display = ('name', 'contact', 'get_total_outstanding')
+    list_display = ('id','name', 'contact', 'get_total_outstanding')
     search_fields = ('name',)
     list_filter = ('name',)
 
@@ -134,7 +142,8 @@ class BillAdmin(ModelAdmin):
     list_display = ('id', 'vendor', 'date', 'net_amount', 'get_total_paid', 'remaining_amount', 'print_link')
     search_fields = ('id', 'vendor__name')
     list_filter = ('vendor', 'date')
-    readonly_fields = ('print_link',)
+    #readonly_fields = ('print_link',)
+    autocomplete_fields = ['vendor']
     @admin.display(description='Paid Amount')
     def get_total_paid(self, obj):
         total_paid = obj.total_paid()
@@ -191,8 +200,9 @@ class PaymentAdmin(ModelAdmin):
     form = PaymentAdminForm
     list_display = ('id', 'invoice', 'bill', 'date', 'type', 'credit', 'debit')
     search_fields = ('id', 'invoice__customer__name', 'invoice__id', 'bill__vendor__name', 'bill__id', 'type')
-    list_filter = ('id', 'date', 'invoice__customer__name','bill__vendor__name', 'type')
+    list_filter = ('date', 'type', 'invoice__customer__name', 'bill__vendor__name')
     list_per_page = 10
+    autocomplete_fields = ['invoice', 'bill']
     actions = [export_selected_payments_as_csv]
     class Media:
         js = ('js/payments_conditional_fields.js',)

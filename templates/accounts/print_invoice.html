@@ -136,51 +136,65 @@
         </p>
     </div>
 </div>
-<div class="info-section">
-    <div class="info-box-2">
-        <p>
-            <strong>Invoice ID:</strong> {{ invoice.id }}<br>
-            <strong>Invoice Description:</strong> {{ invoice.description|default:"N/A" }}<br>
-        </p>
-    </div>
-</div>
-
-<table>
-    <tr>
-        <th>Gross Amount</th>
-        <td>${{ invoice.gross_amount }}</td>
-    </tr>
-    <tr>
-        <th>Discount</th>
-        <td>${{ invoice.discount }}</td>
-    </tr>
-    <tr>
-        <th>Net Amount</th>
-        <td>${{ invoice.net_amount }}</td>
-    </tr>
-    <tr>
-        <th>Total Paid</th>
-        <td>${{ invoice.total_paid }}</td>
-    </tr>
-    <tr>
-        <th>Outstanding Balance</th>
-        <td><strong>${{ invoice.remaining_amount }}</strong></td>
-    </tr>
-</table>
-
-<!-- Payments Section -->
-{% if invoice.payment_set.all %}
-<h4 style="text-align:center;">Payments</h4>
-<table>
+<!-- Invoice Details Table -->
+<table style="width: 100%;">
+    <!-- Invoice Description -->
     <thead>
+        <tr>
+            <th colspan="4">Invoice ID: {{ invoice.id }} | {{ invoice.description|default:"N/A" }}</th>
+        </tr>
+        <tr>
+            <th>Description</th>
+            <th>Qty</th>
+            <th>Rate</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Invoice Items -->
+        {% for item in invoice.invoiceitem_set.all %}
+        <tr>
+            <td>{{ item.description }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>Rs{{ item.rate }}</td>
+            <td>Rs{{ item.amount }}</td>
+        </tr>
+        {% endfor %}
+
+        <!-- Summary Rows -->
+        <tr>
+            <td colspan="3" style="text-align: right;"><strong>Gross Amount</strong></td>
+            <td>Rs{{ invoice.gross_amount }}/=</td>
+        </tr>
+        <tr>
+            <td colspan="3" style="text-align: right;"><strong>Discount</strong></td>
+            <td>Rs{{ invoice.discount }}/=</td>
+        </tr>
+        <tr>
+            <td colspan="3" style="text-align: right;"><strong>Net Amount</strong></td>
+            <td><strong>Rs{{ invoice.net_amount }}/=</strong></td>
+        </tr>
+        <tr>
+            <td colspan="3" style="text-align: right;"><strong>Total Paid</strong></td>
+            <td>Rs{{ invoice.total_paid }}/=</td>
+        </tr>
+        <tr>
+            <td colspan="3" style="text-align: right;"><strong>Outstanding Balance</strong></td>
+            <td><strong>Rs{{ invoice.remaining_amount }}/=</strong></td>
+        </tr>
+
+        {% if invoice.payment_set.all %}
+        <!-- Payments Section Header -->
+        <tr>
+            <th colspan="4" style="text-align:center; background-color:#f5f5f5;">Payments</th>
+        </tr>
+        <!-- Payment Rows -->
         <tr>
             <th>Date</th>
             <th>Type</th>
             <th>Credit</th>
             <th>Debit</th>
         </tr>
-    </thead>
-    <tbody>
         {% for payment in invoice.payment_set.all %}
         <tr>
             <td>{{ payment.date }}</td>
@@ -201,9 +215,10 @@
             </td>
         </tr>
         {% endfor %}
+        {% endif %}
     </tbody>
 </table>
-{% endif %}
+
 
 <footer>
     <img src="{% static 'img/light.png' %}" alt="Bottom Logo" />
