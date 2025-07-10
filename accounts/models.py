@@ -3,23 +3,49 @@ from django.utils import timezone
 from django.db.models import Sum, F, ExpressionWrapper, DecimalField
 from decimal import Decimal
 
-
-class Customer(models.Model):
+class Inventory(models.Model):
     date = models.DateField(default=timezone.now)
-    name = models.CharField(max_length=255)
-    contact = models.CharField(max_length=255)
+    sku = models.CharField(max_length=255, unique=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=0, default=0)
+    rate = models.DecimalField(max_digits=10, decimal_places=0, default=0)
 
     def __str__(self):
-        return self.name
-    def total_outstanding(self):
-        # Sum of all invoices' net_amount minus total payments
-        invoices = self.invoice_set.all()
-        total_outstanding = 0
-        for invoice in invoices:
-            paid_amount = invoice.total_paid()
-            remaining = invoice.net_amount - paid_amount
-            total_outstanding += remaining
-        return total_outstanding
+        return f"{self.sku}"
+    
+    def total_value(self):
+        return self.quantity * self.rate
+
+class Invoice(models.Model):
+    date = models.DateField(default=timezone.now)
+    #customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    
+    gross_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    net_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    def __str__(self):
+        return f"Invoice {self.id}"
+    def total_paid(self):
+        total_credit = self.payment_set.aggregate(total=Sum('credit'))['total'] or 0
+        return total_credit
+    def remaining_amount(self):
+        return self.net_amount - self.total_paid()
+    
+
+
+class InvoiceItem(models.Model):
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE)
+    sku = models.ForeignKey(Inventory, on_delete=models.CASCADE)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    rate = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"Item {self.id} - {self.sku}"
+    
+    def save(self, *args, **kwargs):
+        self.amount = self.quantity * self.rate
+        super().save(*args, **kwargs)
+
 
 
 class Vendor(models.Model):
@@ -35,41 +61,6 @@ class Vendor(models.Model):
         for bill in self.bill_set.all():
             total_remaining += bill.remaining_amount()
         return total_remaining
-
-
-
-class Invoice(models.Model):
-    date = models.DateField(default=timezone.now)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    
-    gross_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    net_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    def __str__(self):
-        return f"Invoice {self.id} - {self.customer.name}"
-    def total_paid(self):
-        total_credit = self.payment_set.aggregate(total=Sum('credit'))['total'] or 0
-        return total_credit
-    def remaining_amount(self):
-        return self.net_amount - self.total_paid()
-    
-
-
-class InvoiceItem(models.Model):
-    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE)
-    description = models.CharField(max_length=255)
-    quantity = models.DecimalField(max_digits=10, decimal_places=2)
-    rate = models.DecimalField(max_digits=10, decimal_places=2)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-
-    def __str__(self):
-        return f"Item {self.id} - {self.description}"
-    
-    def save(self, *args, **kwargs):
-        self.amount = self.quantity * self.rate
-        super().save(*args, **kwargs)
-
-
 
 class Bill(models.Model):
     date = models.DateField(default=timezone.now)

@@ -8,5 +8,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('print/invoice/<int:pk>/', views.print_invoice_template, name='print_invoice_template'),
     path('print/bill/<int:pk>/', views.print_bill_template, name='print_bill_template'),
-    
+    path('api/inventory/', views.get_inventory_data, name='inventory_data'),
+    path('print-inventory-label/<int:sku_id>/', views.print_inventory_label_view, name='print_inventory_label'),
 ]

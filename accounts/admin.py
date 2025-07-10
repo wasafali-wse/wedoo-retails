@@ -10,7 +10,7 @@ from django.contrib.admin.models import LogEntry
 from pathlib import Path
 from unfold.admin import ModelAdmin
 from django.utils.html import format_html
-from .models import Customer, Invoice, InvoiceItem, Payment, Vendor, Bill
+from .models import Inventory, Invoice, InvoiceItem, Payment, Vendor, Bill
 from django.urls import path, reverse
 from django.utils.html import format_html
 from . import views
@@ -65,37 +65,61 @@ export_selected_payments_as_csv.short_description = "Export selected payments to
 
 
 
-class CustomerAdmin(ModelAdmin):
-    list_display = ('id','name', 'contact', 'get_total_outstanding')
-    search_fields = ('id','name', 'contact')
-    list_filter = ('id','date','name', 'contact')
+# class CustomerAdmin(ModelAdmin):
+#     list_display = ('id','name', 'contact', 'get_total_outstanding')
+#     search_fields = ('id','name', 'contact')
+#     list_filter = ('id','date','name', 'contact')
+#     list_per_page = 10
+#     def get_total_outstanding(self, obj):
+#         total = obj.total_outstanding()
+#         # Ensure total is a number
+#         if isinstance(total, (int, float, Decimal)):
+#             total_value = float(total)
+#         else:
+#             total_value = 0
+#         return format_html('<b>Rs{}/=</b>', total_value)
+class InventoryAdmin(ModelAdmin):
+    list_display = ('id', 'sku', 'quantity', 'rate', 'print_label_link')
+    search_fields = ('sku',)
+    list_filter = ('sku',)
     list_per_page = 10
-    def get_total_outstanding(self, obj):
-        total = obj.total_outstanding()
-        # Ensure total is a number
-        if isinstance(total, (int, float, Decimal)):
-            total_value = float(total)
-        else:
-            total_value = 0
-        return format_html('<b>Rs{}/=</b>', total_value)
+
+    def total_value(self, obj):
+        return format_html('<b>Rs{}/=</b>', obj.total_value())
+    total_value.short_description = 'Total Value'
+    @admin.display(description="Print Label")
+    def print_label_link(self, obj):
+        url = reverse('print_inventory_label', args=[obj.pk])
+        return format_html(
+            '<a class="button" onclick="showPrintModal({}, \'{}\')">Print Label</a>',
+            obj.pk,
+            obj.sku
+        )
+    class Media:
+        js = ('js/print_label_modal.js',)
 
 from unfold.admin import StackedInline, TabularInline
-class InvoiceItemInline(TabularInline):  # Use StackedInline for vertical layout
+class InvoiceItemInline(TabularInline):  
     model = InvoiceItem
-    fields = ('description', 'quantity', 'rate', 'amount')
+    autocomplete_fields = ['sku']
+    fields = ('sku', 'quantity', 'rate', 'amount')
     extra = 1
-    
+class PaymentInline(TabularInline):
+    model = Payment
+    fields = ('invoice', 'date', 'type', 'credit')
+    extra = 0    
 
 class InvoiceAdmin(ModelAdmin):
     list_display = (
-        'id', 'customer', 'date', 'gross_amount', 'discount', 'net_amount',
+        'id','date', 'gross_amount', 'discount', 'net_amount',
         'get_remaining_amount', 'print_link'
     )
-    search_fields = ('id','date','customer__name')
-    list_filter = ('date', 'customer__name','id')
+    search_fields = ('id','date')
+    list_filter = ('date','id')
     list_per_page = 10
-    autocomplete_fields = ['customer']
-    inlines = [InvoiceItemInline]
+    
+    #autocomplete_fields = ['customer']
+    inlines = [InvoiceItemInline, PaymentInline]
     def get_remaining_amount(self, obj):
         remaining = obj.remaining_amount()
         if isinstance(remaining, (int, float, Decimal)):
@@ -199,8 +223,8 @@ class PaymentAdminForm(forms.ModelForm):
 class PaymentAdmin(ModelAdmin):
     form = PaymentAdminForm
     list_display = ('id', 'invoice', 'bill', 'date', 'type', 'credit', 'debit')
-    search_fields = ('id', 'invoice__customer__name', 'invoice__id', 'bill__vendor__name', 'bill__id', 'type')
-    list_filter = ('date', 'type', 'invoice__customer__name', 'bill__vendor__name')
+    search_fields = ('id', 'invoice__id', 'bill__vendor__name', 'bill__id', 'type')
+    list_filter = ('date', 'type', 'bill__vendor__name')
     list_per_page = 10
     autocomplete_fields = ['invoice', 'bill']
     actions = [export_selected_payments_as_csv]
@@ -208,10 +232,10 @@ class PaymentAdmin(ModelAdmin):
         js = ('js/payments_conditional_fields.js',)
 
 
-admin.site.register(Customer, CustomerAdmin)
+#admin.site.register(Customer, CustomerAdmin)
 admin.site.register(Invoice, InvoiceAdmin)
 admin.site.register(Vendor, VendorAdmin)
 admin.site.register(Bill, BillAdmin)
 admin.site.register(Payment, PaymentAdmin)
 
-
+admin.site.register(Inventory, InventoryAdmin)

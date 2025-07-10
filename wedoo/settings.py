@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-q-9g1=cky#&x^01b+)l#6a6i56t6%&v4=u(w@1_$am4ojk7sh$
 DEBUG = True
 
 ALLOWED_HOSTS = []
-ADMIN_REDIRECT_TO_DASHBOARD = True 
+LOGIN_REDIRECT_URL = '/admin/'
 
 # Application definition
 
