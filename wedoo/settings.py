@@ -197,4 +197,92 @@ UNFOLD = {
             "important-dark": "var(--color-base-100)",  # text-base-100
         },
     },
+    "SIDEBAR":{
+        "show_search": False,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": _("Accounts"),
+                "separator": False,
+                "collapsible": False,
+                "items": [
+                    {
+                        "title": _("Dashboard"),
+                        "icon": "dashboard",
+                        "link": reverse_lazy("admin:index"),
+                        # You can add badges or permissions as needed
+                        # "badge": "sample_app.badge_callback",
+                        # "permission": lambda request: request.user.is_superuser,
+                    },
+                    {
+                        "title": _("Invoices"),
+                        "icon": "receipt_long",
+                        "link": reverse_lazy("admin:accounts_invoice_changelist"),
+                    },
+                    {
+                        "title": _("Inventory"),
+                        "icon": "inventory",
+                        "link": reverse_lazy("admin:accounts_inventory_changelist"),
+                    },
+                    {
+                        "title": _("Vendors"),
+                        "icon": "business",
+                        "link": reverse_lazy("admin:accounts_vendor_changelist"),
+                    },
+                    {
+                        "title": _("Bills"),
+                        "icon": "receipt",
+                        "link": reverse_lazy("admin:accounts_bill_changelist"),
+                    },
+                    {
+                        "title": _("Payments"),
+                        "icon": "payments",
+                        "link": reverse_lazy("admin:accounts_payment_changelist"),
+                    },
+                    {
+                        "title": _("Expenses"),
+                        "icon": "checkbook",
+                        "link": reverse_lazy("admin:accounts_expense_changelist"),
+                    },
+
+                ],
+            },
+            {
+                "title": _("HR"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Employees"),
+                        "icon": "people",
+                        "link": reverse_lazy("admin:accounts_employee_changelist"),
+                    },
+                    {
+                        "title": _("Pays"),
+                        "icon": "payments",
+                        "link": reverse_lazy("admin:accounts_pays_changelist"),
+                    },
+                ],
+            },
+            
+            {
+                "title": _("User Management"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Users"),
+                        "icon": "people",
+                        "link": reverse_lazy("admin:auth_user_changelist"),
+                    },
+                    {
+                        "title": _("Groups"),
+                        "icon": "group",
+                        "link": reverse_lazy("admin:auth_group_changelist"),
+                    },
+                ],
+            },
+            
+        ],
+    }
 }

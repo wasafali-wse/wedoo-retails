@@ -14,6 +14,21 @@ class Inventory(models.Model):
     
     def total_value(self):
         return self.quantity * self.rate
+class InventoryTransaction(models.Model):
+    TRANSACTION_TYPE_CHOICES = [
+        ('sale', 'Sale'),
+        ('purchase', 'Purchase'),
+        ('adjustment', 'Adjustment'),
+    ]
+
+    date = models.DateTimeField(auto_now_add=True)
+    inventory = models.ForeignKey(Inventory, on_delete=models.CASCADE)
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    related_invoice_item = models.ForeignKey('InvoiceItem', on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.transaction_type} - {self.inventory.sku} - {self.quantity}"
 
 class Invoice(models.Model):
     date = models.DateField(default=timezone.now)
@@ -41,10 +56,24 @@ class InvoiceItem(models.Model):
 
     def __str__(self):
         return f"Item {self.id} - {self.sku}"
-    
+
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
         self.amount = self.quantity * self.rate
         super().save(*args, **kwargs)
+
+        if is_new:
+            # Deduct from inventory
+            self.sku.quantity = F('quantity') - self.quantity
+            self.sku.save()
+
+            # Record transaction
+            InventoryTransaction.objects.create(
+                inventory=self.sku,
+                transaction_type='sale',
+                quantity=self.quantity,
+                related_invoice_item=self
+            )
 
 
 
@@ -88,6 +117,9 @@ class Payment(models.Model):
     
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, null=True, blank=True)
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE, null=True, blank=True)
+    expense = models.OneToOneField('Expense', on_delete=models.CASCADE, null=True, blank=True)
+    pays = models.ForeignKey('Pays', on_delete=models.CASCADE, null=True, blank=True)
+    description = models.CharField(max_length=255, blank=True, null=True)
     type = models.CharField(max_length=10, choices=PAYMENT_TYPE_CHOICES)
     
     credit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -99,6 +131,81 @@ class Payment(models.Model):
             ref = f"Invoice {self.invoice.id}"
         elif self.bill:
             ref = f"Bill {self.bill.id}"
+        elif self.expense:
+            ref = f"Expense {self.expense.id}"
+        elif self.pays:
+            ref = f"Pays {self.pays.id}"
         else:
             ref = "No reference"
         return f"Payment {self.id} - {ref}"
+
+
+# ...existing code...
+
+class Expense(models.Model):
+    EXPENSE_TYPE_CHOICES = [
+        ('stationary', 'Stationary'),
+        ('food', 'Food'),
+        ('maintenance', 'Maintenance'),
+        ('other', 'Other'),
+    ]
+    date = models.DateField(auto_now_add=True)
+    type = models.CharField(max_length=20, choices=EXPENSE_TYPE_CHOICES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.get_type_display()} - {self.amount}"
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new:
+            Payment.objects.create(
+                date=self.date,
+                type='cash',
+                debit=self.amount,
+                #description=self.get_type_display(),
+                expense=self
+            )
+        else:
+            try:
+                payment = Payment.objects.get(expense=self)
+                payment.debit = self.amount
+                #payment.description = self.get_type_display()
+                payment.date = self.date
+                payment.save()
+            except Payment.DoesNotExist:
+                Payment.objects.create(
+                    date=self.date,
+                    type='cash',
+                    debit=self.amount,
+                    #description=self.get_type_display(),
+                    expense=self
+                )
+
+# ...existing code...
+
+class Employee(models.Model):
+    date = models.DateField(auto_now_add=True)
+    name = models.CharField(max_length=255)
+    contact = models.CharField(max_length=50)
+    CNIC = models.CharField(max_length=30)
+    address = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+class Pays(models.Model):
+    id = models.AutoField(primary_key=True)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    date = models.DateField(default=timezone.now)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.employee.name} "
+    def total_paid(self):
+        total = self.payment_set.aggregate(total=Sum('debit'))['total'] or 0
+        return total
+
+    def remaining_amount(self):
+        return self.amount - self.total_paid()

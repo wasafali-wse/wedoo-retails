@@ -10,13 +10,16 @@ from django.contrib.admin.models import LogEntry
 from pathlib import Path
 from unfold.admin import ModelAdmin
 from django.utils.html import format_html
-from .models import Inventory, Invoice, InvoiceItem, Payment, Vendor, Bill
+from .models import Inventory, Invoice, InvoiceItem, Payment, Vendor, Bill,Expense,Employee, Pays
 from django.urls import path, reverse
 from django.utils.html import format_html
 from . import views
 from django.shortcuts import redirect
 import csv
 from django.http import HttpResponse
+from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
+
 
 admin.site.unregister(User)
 admin.site.unregister(Group)
@@ -61,7 +64,7 @@ def export_selected_payments_as_csv(modeladmin, request, queryset):
 
     return response
 
-export_selected_payments_as_csv.short_description = "Export selected payments to CSV"
+export_selected_payments_as_csv.short_description = "Export to CSV"
 
 
 
@@ -80,8 +83,9 @@ export_selected_payments_as_csv.short_description = "Export selected payments to
 #         return format_html('<b>Rs{}/=</b>', total_value)
 class InventoryAdmin(ModelAdmin):
     list_display = ('id', 'sku', 'quantity', 'rate', 'print_label_link')
-    search_fields = ('sku',)
-    list_filter = ('sku',)
+    search_fields = ('sku','quantity')
+    list_filter = ('sku','quantity')
+
     list_per_page = 10
 
     def total_value(self, obj):
@@ -103,11 +107,11 @@ class InvoiceItemInline(TabularInline):
     model = InvoiceItem
     autocomplete_fields = ['sku']
     fields = ('sku', 'quantity', 'rate', 'amount')
-    extra = 1
+    extra = 0
 class PaymentInline(TabularInline):
     model = Payment
-    fields = ('invoice', 'date', 'type', 'credit')
-    extra = 0    
+    fields = ('invoice', 'type', 'credit')
+    extra = 1    
 
 class InvoiceAdmin(ModelAdmin):
     list_display = (
@@ -154,18 +158,23 @@ class InvoiceAdmin(ModelAdmin):
 
 class VendorAdmin(ModelAdmin):
     list_display = ('id','name', 'contact', 'get_total_outstanding')
-    search_fields = ('name',)
-    list_filter = ('name',)
+    search_fields = ('name','contact')
+    list_filter = ('name','contact')
 
     @admin.display(description='Total Due')
     def get_total_outstanding(self, obj):
         total = obj.total_dues()
         return format_html('<b>Rs{}/=</b>', total)
 
+class PaymentInline2(TabularInline):
+    model = Payment
+    fields = ('bill', 'type', 'debit')
+    extra = 1 
 class BillAdmin(ModelAdmin):
     list_display = ('id', 'vendor', 'date', 'net_amount', 'get_total_paid', 'remaining_amount', 'print_link')
-    search_fields = ('id', 'vendor__name')
+    search_fields = ('id', 'vendor__name', 'vendor__contact', 'vendor__AccountNumber')
     list_filter = ('vendor', 'date')
+    inlines= [PaymentInline2]
     #readonly_fields = ('print_link',)
     autocomplete_fields = ['vendor']
     @admin.display(description='Paid Amount')
@@ -222,14 +231,60 @@ class PaymentAdminForm(forms.ModelForm):
 
 class PaymentAdmin(ModelAdmin):
     form = PaymentAdminForm
-    list_display = ('id', 'invoice', 'bill', 'date', 'type', 'credit', 'debit')
+    list_display = ('id','expense', 'invoice', 'bill','pays', 'date', 'type', 'credit', 'debit')
     search_fields = ('id', 'invoice__id', 'bill__vendor__name', 'bill__id', 'type')
     list_filter = ('date', 'type', 'bill__vendor__name')
     list_per_page = 10
-    autocomplete_fields = ['invoice', 'bill']
+    autocomplete_fields = ['invoice', 'bill', 'expense', 'pays']
     actions = [export_selected_payments_as_csv]
     class Media:
         js = ('js/payments_conditional_fields.js',)
+
+class ExpenseAdmin(ModelAdmin):
+    list_display = ('id', 'date', 'type', 'amount')
+    list_filter = ('type', 'date')
+    search_fields = ('type',)
+
+class EmployeeAdmin(ModelAdmin):
+    search_fields = ['name', 'contact', 'CNIC'] 
+    list_display = ('id', 'name', 'contact', 'CNIC','address')
+class PaymentInlinePays(TabularInline):
+    model = Payment
+    fields = ('pays', 'type', 'debit')
+    extra = 1
+    #fk_name = 'pays'
+
+class PaysAdmin(ModelAdmin):
+    list_display = ( 'employee', 'date', 'amount', 'get_total_paid', 'remaining_amount', 'print_link')
+    search_fields = ['employee__name', 'employee__contact', 'employee__CNIC']  # Must be a list or tuple
+    list_filter = ('date', 'employee')
+    inlines = [PaymentInlinePays]
+    autocomplete_fields = ['employee']
+
+    @admin.display(description='Paid Amount')
+    def get_total_paid(self, obj):
+        return obj.total_paid()
+
+    @admin.display(description='Remaining Due')
+    def remaining_amount(self, obj):
+        return obj.remaining_amount()
+
+    @admin.display(description='Print Payslip')
+    def print_link(self, obj):
+        url = reverse('admin:pays_print', args=[obj.pk])
+        return format_html('<a class="button" href="{}" target="_blank">Print Payslip</a>', url)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('<int:object_id>/print/', self.admin_site.admin_view(self.print_view), name='pays_print'),
+        ]
+        return custom_urls + urls
+
+    def print_view(self, request, object_id):
+        pays = self.get_object(request, object_id)
+        return redirect(reverse('print_payslip_template', args=[pays.pk]))
+
 
 
 #admin.site.register(Customer, CustomerAdmin)
@@ -237,5 +292,7 @@ admin.site.register(Invoice, InvoiceAdmin)
 admin.site.register(Vendor, VendorAdmin)
 admin.site.register(Bill, BillAdmin)
 admin.site.register(Payment, PaymentAdmin)
-
 admin.site.register(Inventory, InventoryAdmin)
+admin.site.register(Expense, ExpenseAdmin)
+admin.site.register(Employee, EmployeeAdmin)
+admin.site.register(Pays, PaysAdmin)

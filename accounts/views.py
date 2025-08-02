@@ -1,5 +1,8 @@
 from django.shortcuts import render, get_object_or_404
-from .models import Invoice, Bill
+from .models import Invoice, Bill,Pays
+import socket
+from django.http import JsonResponse
+from .models import Inventory
 
 def print_invoice_template(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -9,15 +12,18 @@ def print_bill_template(request, pk):
     bill = get_object_or_404(Bill, pk=pk)
     return render(request, 'accounts/print_bill.html', {'bill': bill})
 
-from django.http import JsonResponse
-from .models import Inventory
+
+def print_payslip_template(request, pk):
+    pays = get_object_or_404(Pays, pk=pk)
+    return render(request, 'accounts/print_payslip.html', {'pays': pays})
+
 
 def get_inventory_data(request):
     data = [{'id': str(i['id']), 'rate': i['rate']} for i in Inventory.objects.values('id', 'rate')]
     return JsonResponse(data, safe=False)
 
 
-import socket
+
 
 def send_zpl_to_printer(zpl_string, printer_ip="192.168.100.200", port=9100):
     try:

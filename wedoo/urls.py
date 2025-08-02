@@ -10,4 +10,5 @@ urlpatterns = [
     path('print/bill/<int:pk>/', views.print_bill_template, name='print_bill_template'),
     path('api/inventory/', views.get_inventory_data, name='inventory_data'),
     path('print-inventory-label/<int:sku_id>/', views.print_inventory_label_view, name='print_inventory_label'),
+    path('payslip/<int:pk>/print/', views.print_payslip_template, name='print_payslip_template'),
 ]

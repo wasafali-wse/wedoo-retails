@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Payslip #{{ pays.id }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 13px; margin: 0; padding: 0; }
+        header, footer { text-align: center; }
+        .info-box { margin: 10px; }
+        table { width: 95%; margin: 10px auto; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; }
+        th { background-color: #f5f5f5; }
+        @media print { body { margin: 0; } }
+    </style>
+    <script>
+        window.onload = function () {
+            window.print();
+            window.onafterprint = function () { window.close(); };
+        };
+    </script>
+</head>
+<body>
+<header>
+    <img src="{% static 'img/logo.png' %}" alt="Logo" style="height:80px;" />
+    <h2>Payslip</h2>
+</header>
+<div class="info-box">
+    <p><strong>Payslip ID:</strong> {{ pays.id }}</p>
+    <p><strong>Date:</strong> {{ pays.date }}</p>
+    <p><strong>Employee:</strong> {{ pays.employee.name }}</p>
+    <p><strong>Contact:</strong> {{ pays.employee.contact }}</p>
+    <p><strong>CNIC:</strong> {{ pays.employee.CNIC }}</p>
+    <p><strong>Address:</strong> {{ pays.employee.address }}</p>
+</div>
+<table>
+    <tr>
+        <th>Amount</th>
+        <td>Rs{{ pays.amount }}/=</td>
+    </tr>
+    <tr>
+        <th>Total Paid</th>
+        <td>Rs{{ pays.total_paid }}/=</td>
+    </tr>
+    <tr>
+        <th>Remaining Due</th>
+        <td><strong>Rs{{ pays.remaining_amount }}/=</strong></td>
+    </tr>
+    {% if pays.payment_set.all %}
+    <tr>
+        <th colspan="2" style="text-align:center;">Payments</th>
+    </tr>
+    <tr>
+        <th>Date</th>
+        <th>Debit</th>
+    </tr>
+    {% for payment in pays.payment_set.all %}
+    <tr>
+        <td>{{ payment.date }}</td>
+        <td>Rs{{ payment.debit }}/=</td>
+    </tr>
+    {% endfor %}
+    {% endif %}
+</table>
+<footer>
+    <img src="{% static 'img/light.png' %}" alt="Footer Logo" style="height:50px;" />
+    <p>Visit us: <a href="https://waheedsons-engineering.com">waheedsons-engineering.com</a></p>
+</footer>
+</body>
+</html>
