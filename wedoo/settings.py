@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from django.templatetags.static import static
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -146,21 +147,43 @@ UNFOLD = {
     #"DASHBOARD_CALLBACK": "accounts.views.dashboard_callback",
     "SITE_DROPDOWN": [
         {
-            "icon": "diamond",
-            "title": _("Waheedsons"),
+            "icon": "captive_portal",
+            "title": _("waheedsons engineering"),
             "link": "https://waheedsons-engineering.com",
         },
         {
-            "icon": "diamond",
-            "title": _("Main"),
-            "link": reverse_lazy("admin:index"),
+            "icon": "help",
+            "title": _("Help"),
+            "link": "https://docs.waheedsons-engineering.com",
         },
+        # {
+        #     "icon": "browse",
+        #     "title": _("Dashboard"),
+        #     "link": reverse_lazy("admin:index"),
+        # },
     ]
     ,
+    "SITE_FAVICONS": [
+        {
+            "rel": "icon",
+            "sizes": "32x32",
+            "type": "image/png",
+            "href": lambda request: static("img/favicon.png"),
+        },
+    ],
+    "SITE_ICON": {
+        "light": lambda request: static("img/logobg.png"),  # light mode
+        "dark": lambda request: static("img/logobgl.png"),  # dark mode
+    },
+    # "SITE_LOGO": lambda request: static("logo.svg"),  # both modes, optimise for 32px height
+    # "SITE_LOGO": {
+    #     "light": lambda request: static("img/logobg.png"),  # light mode
+    #     "dark": lambda request: static("img/logobg.png"),  # dark mode
+    # },
     "SHOW_HISTORY": True, # show/hide "History" button, default: True
     "SHOW_VIEW_ON_SITE": False,
     "SHOW_BACK_BUTTON": True,
-    "BORDER_RADIUS": "10px",
+    "BORDER_RADIUS": "12px",
     "COLORS": {
         "base": {
             "50": "249, 250, 251",
@@ -197,6 +220,7 @@ UNFOLD = {
             "important-dark": "var(--color-base-100)",  # text-base-100
         },
     },
+    "DASHBOARD_CALLBACK": "accounts.views.dashboard_callback",
     "SIDEBAR":{
         "show_search": False,
         "show_all_applications": False,
@@ -212,7 +236,7 @@ UNFOLD = {
                         "link": reverse_lazy("admin:index"),
                         # You can add badges or permissions as needed
                         # "badge": "sample_app.badge_callback",
-                        # "permission": lambda request: request.user.is_superuser,
+                        "permission": lambda request: request.user.is_superuser,
                     },
                     {
                         "title": _("Invoices"),
@@ -228,16 +252,19 @@ UNFOLD = {
                         "title": _("Vendors"),
                         "icon": "business",
                         "link": reverse_lazy("admin:accounts_vendor_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
                     },
                     {
                         "title": _("Bills"),
                         "icon": "receipt",
                         "link": reverse_lazy("admin:accounts_bill_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
                     },
                     {
                         "title": _("Payments"),
                         "icon": "payments",
                         "link": reverse_lazy("admin:accounts_payment_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
                     },
                     {
                         "title": _("Expenses"),
@@ -256,11 +283,13 @@ UNFOLD = {
                         "title": _("Employees"),
                         "icon": "people",
                         "link": reverse_lazy("admin:accounts_employee_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
                     },
                     {
                         "title": _("Pays"),
                         "icon": "payments",
                         "link": reverse_lazy("admin:accounts_pays_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
                     },
                 ],
             },
@@ -274,11 +303,13 @@ UNFOLD = {
                         "title": _("Users"),
                         "icon": "people",
                         "link": reverse_lazy("admin:auth_user_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
                     },
                     {
                         "title": _("Groups"),
                         "icon": "group",
                         "link": reverse_lazy("admin:auth_group_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
                     },
                 ],
             },

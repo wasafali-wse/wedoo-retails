@@ -124,6 +124,7 @@ class InvoiceAdmin(ModelAdmin):
     
     #autocomplete_fields = ['customer']
     inlines = [InvoiceItemInline, PaymentInline]
+    @admin.display(description='Due Amount')
     def get_remaining_amount(self, obj):
         remaining = obj.remaining_amount()
         if isinstance(remaining, (int, float, Decimal)):

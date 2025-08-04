@@ -1,0 +1,141 @@
+{% extends 'admin/base.html' %}
+{% load unfold %}
+{% load i18n %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block title %}
+    Dashboard | {{ site_title|default:_('Wedoo') }}
+{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+
+{% if request.user.is_superuser %}
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    {% component "unfold/components/card.html" with title="Total Sales" %}
+        <p class="text-2xl font-semibold">Rs {{ total_sales|floatformat:2 }}</p>
+    {% endcomponent %}
+    {% component "unfold/components/card.html" with title="Total Expenses" %}
+        <p class="text-2xl font-semibold">Rs {{ total_expenses|floatformat:2 }}</p>
+    {% endcomponent %}
+    {% component "unfold/components/card.html" with title="Paid in Bills" %}
+        <p class="text-2xl font-semibold">Rs {{ total_paid_bills|floatformat:2 }}</p>
+    {% endcomponent %}
+    {% component "unfold/components/card.html" with title="Low Inventory (&lt; 10)" %}
+        <p class="text-2xl font-semibold">{{ low_inventory|length }}</p>
+    {% endcomponent %}
+</div>
+
+
+{% component "unfold/components/card.html" with title="Monthly Sales" %}
+
+<canvas id="monthlySalesChart" height="80"></canvas>
+{% endcomponent %}
+
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4  mt-4">
+    {% component "unfold/components/card.html" with title="Recent Sales" %}
+        {% component "unfold/components/table.html" with table=last_sales_table card_included=1 striped=1 height=250 %}{% endcomponent %}
+    {% endcomponent %}
+    {% component "unfold/components/card.html" with title="Low Inventory Items" %}
+        {% component "unfold/components/table.html" with table=low_inventory_table card_included=1 striped=1 height=250 %}{% endcomponent %}
+    {% endcomponent %}
+</div>
+
+
+{% comment %} {% block extra_js %} {% endcomment %}
+{% comment %} <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const monthlySales = {{ monthly_sales|safe }};
+    console.log(monthlySales);
+    const labels = monthlySales.map(item => item.month ? item.month.substring(0, 7) : '');
+    const data = monthlySales.map(item => item.total);
+
+    const ctx = document.getElementById('monthlySalesChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Monthly Sales',
+                data: data,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.2,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+</script> {% endcomment %}
+{% comment %} {% endblock %} {% endcomment %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const chartData = {{ chart_data|safe }};
+    const ctx = document.getElementById('monthlySalesChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.labels,
+            datasets: [
+                {
+                    label: 'Sales',
+                    data: chartData.sales,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.2,
+                    fill: false
+                },
+                {
+                    label: 'Expenses',
+                    data: chartData.expenses,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.2,
+                    fill: false
+                },
+                {
+                    label: 'Pays',
+                    data: chartData.pays,
+                    borderColor: 'rgb(255, 205, 86)',
+                    backgroundColor: 'rgba(255, 205, 86, 0.1)',
+                    tension: 0.2,
+                    fill: false
+                },
+                {
+                    label: 'Bills',
+                    data: chartData.bills,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.2,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: true }
+            }
+        }
+    });
+</script>
+
+{% else %}
+    <div class="text-center text-lg text-gray-500 mt-10">
+        <h1 class="text-2xl font-bold">Oops!</h1>
+        <h2 class="text-xl">You do not have permission to view the dashboard.</h2>
+    </div>
+{% endif %}
+
+{% endblock %}
