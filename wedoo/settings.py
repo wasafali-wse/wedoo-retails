@@ -238,6 +238,11 @@ UNFOLD = {
                         # "badge": "sample_app.badge_callback",
                         "permission": lambda request: request.user.is_superuser,
                     },
+                    # {
+                    #     "title": _("POS"),
+                    #     "icon": "point_of_sale",
+                    #     "link": reverse_lazy("admin:pos"),
+                    # },
                     {
                         "title": _("Invoices"),
                         "icon": "receipt_long",

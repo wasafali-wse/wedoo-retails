@@ -5,6 +5,7 @@ from django.contrib.auth.models import User, Group
 from decimal import Decimal
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 from unfold.admin import ModelAdmin
+from unfold.views import UnfoldModelAdminViewMixin
 from django import forms
 from django.contrib.admin.models import LogEntry
 from pathlib import Path
@@ -19,7 +20,8 @@ import csv
 from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
-
+from django.views.generic import TemplateView
+from django.shortcuts import render
 
 admin.site.unregister(User)
 admin.site.unregister(Group)
@@ -81,13 +83,50 @@ export_selected_payments_as_csv.short_description = "Export to CSV"
 #         else:
 #             total_value = 0
 #         return format_html('<b>Rs{}/=</b>', total_value)
+
+# def pos_view(request):
+#     return render(request, "admin/pos.html", {"title": "Point of Sale",})
+
+# # Save the original get_urls
+# original_get_urls = admin.site.get_urls
+
+# def get_urls():
+#     urls = original_get_urls()
+#     custom_urls = [
+#         path("accounts/pos/", admin.site.admin_view(pos_view), name="pos"),
+#     ]
+#     return custom_urls + urls
+
+# admin.site.get_urls = get_urls
+from unfold.views import UnfoldModelAdminViewMixin
+from django.views.generic import TemplateView
+original_get_urls = admin.site.get_urls
+class POSView(UnfoldModelAdminViewMixin, TemplateView):
+    title = "POS Sale"
+    permission_required = ()  # or set permissions as needed
+    template_name = "admin/pos.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['items'] = Inventory.objects.all()
+        return context
+
+# Update get_urls to use POSView
+# def get_urls():
+#     urls = original_get_urls()
+#     custom_urls = [
+#         path("accounts/pos/", admin.site.admin_view(POSView.as_view(model_admin=self)), name="pos"),
+#     ]
+#     return custom_urls + urls
+
+# admin.site.get_urls = get_urls
+
 class InventoryAdmin(ModelAdmin):
-    list_display = ('id', 'sku', 'quantity', 'rate', 'print_label_link')
-    search_fields = ('sku','quantity')
-    list_filter = ('sku','quantity')
-
+    list_display = ('sku','category', 'quantity', 'rate', 'print_label_link')
+    search_fields = ('sku','quantity','category')
+    list_filter = ('sku','category','quantity')
     list_per_page = 10
-
+    
     def total_value(self, obj):
         return format_html('<b>Rs{}/=</b>', obj.total_value())
     total_value.short_description = 'Total Value'
@@ -133,12 +172,14 @@ class InvoiceAdmin(ModelAdmin):
             remaining_value = 0
         return format_html('<b>Rs{}/=</b>', remaining_value)
     def get_urls(self):
+        custom_view = self.admin_site.admin_view(POSView.as_view(model_admin=self))
         urls = super().get_urls()
         custom_urls = [
             path('<int:object_id>/print/', self.admin_site.admin_view(self.print_view), name='invoice_print'),
+            path("pos/", custom_view, name="pos"),
         ]
         return custom_urls + urls
-
+    
     def print_link(self, obj):
         url = reverse('admin:invoice_print', args=[obj.pk])
         return format_html('<a class="button" href="{}" target="_blank">Print</a>', url)

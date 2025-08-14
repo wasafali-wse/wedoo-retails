@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Invoice #{{ invoice.id }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+<nav class="bg-gray-800 shadow">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <!-- Left side -->
+      <div class="flex-shrink-0 text-white font-bold text-xl">
+        Wedoo
+      </div>
+      
+      <!-- Right side -->
+      <div class="flex space-x-4">
+        <a href="https://docs.waheedsons-engineering.com" target="_blank" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+          Help
+        </a>
+        <a href="{% url "admin:index" %}" target="_blank" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+          Admin
+        </a>
+        <div class="text-gray-300 text-sm font-medium">
+          Made by Waheedsons Engineering
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded shadow">
+        <a href="{% url 'home' %}" class='bg-zinc-600 hover:bg-zinc-700 text-white px-4 py-2 rounded'>Back to Home</a>
+        <h1 class="text-2xl font-bold mb-4">Invoice #{{ invoice.id }}</h1>
+        <p>Date: {{ invoice.date }}</p>
+        <table class="w-full mt-4 mb-4 border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border border-gray-300 px-2 py-1">SKU</th>
+                    <th class="border border-gray-300 px-2 py-1">Rate</th>
+                    <th class="border border-gray-300 px-2 py-1">Qty</th>
+                    <th class="border border-gray-300 px-2 py-1">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice.invoiceitem_set.all %}
+                <tr>
+                    <td class="border border-gray-300 px-2 py-1">{{ item.sku.sku }}</td>
+                    <td class="border border-gray-300 px-2 py-1">Rs {{ item.rate }}</td>
+                    <td class="border border-gray-300 px-2 py-1">{{ item.quantity }}</td>
+                    <td class="border border-gray-300 px-2 py-1">Rs {{ item.amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="text-xl font-semibold mb-4">Total: Rs {{ invoice.net_amount }}</div>
+        <a href="{% url 'print_invoice_template' invoice.id %}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Print Invoice</a>
+    </div>
+</body>
+</html>

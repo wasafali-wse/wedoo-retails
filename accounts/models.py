@@ -4,11 +4,20 @@ from django.db.models import Sum, F, ExpressionWrapper, DecimalField
 from decimal import Decimal
 
 class Inventory(models.Model):
+    category_choice = (
+        ('cakes', 'cakes'),
+        ('pastries', 'pastries'),
+        ('fried','fried'),
+        ('nimko','nimko'),
+        ('drinks','drinks'),
+        ('sweets','sweets'),
+        ('snacks','snacks'),
+    )
     date = models.DateField(default=timezone.now)
     sku = models.CharField(max_length=255, unique=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=0, default=0)
     rate = models.DecimalField(max_digits=10, decimal_places=0, default=0)
-
+    category = models.CharField(max_length=255, blank=True, null=True , choices=category_choice)
     def __str__(self):
         return f"{self.sku}"
     

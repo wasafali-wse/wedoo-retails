@@ -1,0 +1,105 @@
+{% extends 'admin/base.html' %}
+{% load unfold %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+    
+{% endblock %}
+
+{% block title %}
+    Wedoo | {{ site_title|default:_('Wedoo') }}
+{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+{% component "unfold/components/container.html" %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-1">
+        <!-- Inventory Items (2 cols) -->
+        <div class="md:col-span-2 flex flex-col gap-1">
+            {% component "unfold/components/card.html" with title="Items" %}
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {% for item in items %}
+                        {% component "unfold/components/card.html" with footer=item.sku %}
+                            <div class="flex flex-col m-1 p-0">
+                                <button type="button" class="button button-primary m-1 p-0" onclick="addToInvoice('{{ item.id }}', '{{ item.sku }}', '{{ item.rate }}')">
+                                    <span class="text-lg font-semibold">{{ item.sku }}</span>
+                                    <span class="text-sm text-gray-500">{% trans "Qty" %}: {{ item.quantity }}</span>
+                                    <span class="text-sm text-gray-500">{% trans "Rate" %}: Rs {{ item.rate }}</span>
+                                    <span class="text-sm text-gray-500">{% trans "Add to Invoice" %}</span>
+                                </button>
+                            </div>
+                        {% endcomponent %}
+                    {% empty %}
+                        <div class="text-gray-400">{% trans "No items in inventory." %}</div>
+                    {% endfor %}
+                </div>
+            {% endcomponent %}
+        </div>
+        <!-- Invoice Builder (1 col) -->
+        <div>
+            {% component "unfold/components/card.html" with title="Invoice Builder"  %}
+                <form id="invoiceForm">
+                    {% component "unfold/components/table.html" with table=invoice_table card_included=1 striped=1 %}
+                    {% endcomponent %}
+                    <div class="font-bold mb-1 mt-1">Grand Total: Rs <span id="grandTotal">0</span></div>
+                    <button type="submit" class="button button-primary w-full mt-2">{% trans "Submit Invoice" %}</button>
+                </form>
+            {% endcomponent %}
+        </div>
+    </div>
+{% endcomponent %}
+
+<script>
+    let invoiceItems = {};
+
+    function addToInvoice(id, sku, rate) {
+        if (!invoiceItems[id]) {
+            invoiceItems[id] = {sku, rate: parseFloat(rate), qty: 1};
+        } else {
+            invoiceItems[id].qty += 1;
+        }
+        renderInvoice();
+    }
+
+    function removeFromInvoice(id) {
+        delete invoiceItems[id];
+        renderInvoice();
+    }
+
+    function renderInvoice() {
+        // Build table data for Unfold table component
+        const rows = [];
+        let grandTotal = 0;
+        for (const [id, item] of Object.entries(invoiceItems)) {
+            const total = item.qty * item.rate;
+            grandTotal += total;
+            rows.push([
+                item.sku,
+                `Rs ${item.rate}`,
+                `<input type="number" min="1" value="${item.qty}" style="width:50px;" onchange="updateQty('${id}', this.value)">`,
+                `Rs ${total}`,
+                `<button type="button" onclick="removeFromInvoice('${id}')">Remove</button>`
+            ]);
+        }
+        document.getElementById("grandTotal").innerText = grandTotal;
+
+        // Update table (requires AJAX or Django context update for full integration)
+        // For demo, you can update the DOM directly or use AJAX to update invoice_table context
+    }
+
+    function updateQty(id, qty) {
+        invoiceItems[id].qty = parseInt(qty);
+        renderInvoice();
+    }
+
+    document.getElementById("invoiceForm").onsubmit = function(e) {
+        e.preventDefault();
+        alert("Invoice submitted! (Implement backend logic)");
+        // You can send invoiceItems to backend via AJAX here
+    };
+</script>
+
+{% endblock %}

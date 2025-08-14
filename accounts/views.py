@@ -6,6 +6,65 @@ from .models import Inventory
 from django.db.models import Sum, F, Count
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
+from decimal import Decimal
+def home(request):
+    items = Inventory.objects.all()
+    categories = Inventory.objects.values_list('category', flat=True).distinct()
+    return render(request, 'accounts/home.html', {'items': items, 'categories': categories})
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
+from .models import Invoice, InvoiceItem, Payment
+
+@csrf_exempt
+def create_invoice(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+
+        # Extract invoice data
+        items = data.get('items', {})
+        total_amount = data.get('total', '0')
+        total_amount = Decimal(total_amount)
+
+        # Save invoice
+        invoice = Invoice.objects.create(
+            date=timezone.now().date(),
+            gross_amount=total_amount,
+            discount=0,  # You can extend to handle discounts
+            net_amount=total_amount,  # Adjust if discounts or taxes are added
+        )
+
+        # Save invoice items
+        for item_id, item_data in items.items():
+            sku = item_data['sku']
+            rate = Decimal(item_data['rate'])
+            quantity = Decimal(item_data['qty'])
+            amount = quantity * rate
+
+            inventory_obj = Inventory.objects.get(pk=int(item_id))
+            InvoiceItem.objects.create(
+                invoice=invoice,
+                sku=inventory_obj,
+                quantity=quantity,
+                rate=rate,
+                amount=amount,
+            )
+
+        # Save payment (assuming full payment now)
+        Payment.objects.create(
+            invoice=invoice,
+            date=timezone.now(),
+            type='cash',  # or get from user input
+            credit=invoice.net_amount,
+        )
+
+        return JsonResponse({'success': True, 'invoice_id': invoice.id})
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid method'})
+def invoice_detail(request, invoice_id):
+    invoice = get_object_or_404(Invoice, pk=invoice_id)
+    return render(request, 'accounts/invoice_detail.html', {'invoice': invoice})
 
 def print_invoice_template(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -133,7 +192,7 @@ def dashboard_callback(request, context):
     }
 
     # Last 5 sales (invoices)
-    last_sales = Invoice.objects.filter(date=today).order_by('-date')[:10]
+    last_sales = Invoice.objects.filter(date=today).order_by('-id')
     last_sales_table = {
         "headers": ["ID", "Date", "Net Amount"],
         "rows": [

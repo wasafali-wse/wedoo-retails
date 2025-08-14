@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>POS - Wedoo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+<!-- Navbar -->
+<nav class="bg-gray-800 shadow">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <!-- Left side -->
+      <div class="flex-shrink-0 text-white font-bold text-xl">Wedoo</div>
+      <!-- Right side -->
+      <div class="flex space-x-4">
+        <a href="https://docs.waheedsons-engineering.com" target="_blank" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Help</a>
+        <a href="{% url "admin:index" %}" target="_blank" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Admin</a>
+        <div class="text-gray-300 text-sm font-medium">Made by Waheedsons Engineering</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container mx-auto py-8">
+    <!-- Filter -->
+    <div class="mb-4 flex items-center gap-2 w-full">
+        <label for="itemFilter" class="font-semibold">Filter:</label>
+        <select id="itemFilter" class="border rounded px-2 py-1" onchange="filterItems()">
+            <option value="all">All</option>
+            {% for cat in categories %}
+                {% if cat %}
+                    <option value="{{ cat }}">{{ cat|title }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Inventory Items (2 cols) -->
+        <div class="md:col-span-2">
+            <h2 class="text-xl font-bold mb-4">Inventory Items</h2>
+            <div id="itemsGrid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {% for item in items %}
+                <div class="item-card bg-white rounded-lg shadow hover:shadow-lg transition duration-200 p-4 flex flex-col items-center" data-category="{{ item.category }}">
+                    <div class="font-semibold text-lg mb-2">{{ item.sku }}</div>
+                    <div class="text-sm text-gray-600 mb-2">Qty: {{ item.quantity }}</div>
+                    <div class="text-sm text-gray-600 mb-2">Rate: Rs {{ item.rate }}</div>
+                    <button 
+                        {% if item.quantity == 0 %} disabled {% endif %}
+                        class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition {% if item.quantity == 0 %} opacity-50 cursor-not-allowed {% endif %}" 
+                        onclick="addToInvoice('{{ item.id }}', '{{ item.sku }}', '{{ item.rate }}', '{{ item.quantity }}')">
+                        Add
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Invoice Builder (1 col) -->
+        <div>
+            <h2 class="text-xl font-bold mb-4">Invoice</h2>
+            <form id="invoiceForm">
+                <table class="min-w-full bg-white rounded shadow mb-4" id="invoiceTable">
+                    <thead>
+                        <tr>
+                            <th class="px-2 py-1">SKU</th>
+                            <th class="px-2 py-1">Rate</th>
+                            <th class="px-2 py-1">Qty</th>
+                            <th class="px-2 py-1">Total</th>
+                            <th class="px-2 py-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JS will add rows here -->
+                    </tbody>
+                </table>
+                <div class="font-bold mb-2">Grand Total: Rs <span id="grandTotal">0</span></div>
+                <button type="submit" class="w-full px-3 py-2 bg-green-600 text-white rounded">Submit Invoice</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    let invoiceItems = {};
+
+    function addToInvoice(id, sku, rate, quantity) {
+        // Prevent adding if quantity is 0
+        if (parseFloat(quantity) === 0) {
+            alert('This item is out of stock or quantity is zero.');
+            return;
+        }
+        if (!invoiceItems[id]) {
+            invoiceItems[id] = {
+                sku,
+                rate: parseFloat(rate),
+                qty: 1 // initial qty, could be fractional
+            };
+        } else {
+            invoiceItems[id].qty += 1;
+        }
+        renderInvoice();
+    }
+
+    function removeFromInvoice(id) {
+        delete invoiceItems[id];
+        renderInvoice();
+    }
+
+    function updateQty(id, qty) {
+        const parsedQty = parseFloat(qty);
+        if (isNaN(parsedQty) || parsedQty < 0) {
+            invoiceItems[id].qty = 0;
+        } else {
+            invoiceItems[id].qty = parsedQty;
+        }
+        renderInvoice();
+    }
+
+    function renderInvoice() {
+        const tbody = document.querySelector("#invoiceTable tbody");
+        tbody.innerHTML = "";
+        let grandTotal = 0;
+        for (const [id, item] of Object.entries(invoiceItems)) {
+            const qty = parseFloat(item.qty);
+            const total = qty * item.rate;
+            if (!isNaN(total)) {
+                grandTotal += total;
+            }
+            tbody.innerHTML += `
+                <tr>
+                    <td class="px-2 py-1">${item.sku}</td>
+                    <td class="px-2 py-1">Rs ${item.rate}</td>
+                    <td class="px-2 py-1">
+                        <input type="number" min="0.01" step="0.01" value="${item.qty}" class="w-20 border rounded px-1" onchange="updateQty('${id}', this.value)">
+                    </td>
+                    <td class="px-2 py-1">Rs ${total.toFixed(2)}</td>
+                    <td class="px-2 py-1"><button type="button" class="text-red-600" onclick="removeFromInvoice('${id}')">Remove</button></td>
+                </tr>
+            `;
+        }
+        document.getElementById("grandTotal").innerText = grandTotal.toFixed(2);
+    }
+
+    // Commented out, since you have your own submit handler
+    /*
+    document.getElementById("invoiceForm").onsubmit = function(e) {
+        e.preventDefault();
+        // Send invoiceItems to backend via AJAX or form POST
+        alert("Invoice submitted! (Implement backend logic)");
+    };
+    */
+
+    // Filter function
+    function filterItems() {
+        const filter = document.getElementById("itemFilter").value;
+        document.querySelectorAll(".item-card").forEach(card => {
+            if (filter === "all" || card.dataset.category === filter) {
+                card.style.display = "";
+            } else {
+                card.style.display = "none";
+            }
+        });
+    }
+
+    document.getElementById("invoiceForm").onsubmit = function(e) {
+        e.preventDefault();
+
+        const data = {
+            items: invoiceItems,
+            total: document.getElementById("grandTotal").innerText,
+            // Additional fields if needed
+        };
+
+        fetch('/api/create-invoice/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify(data),
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                const invoiceId = result.invoice_id;
+                window.location.href = `/pos/invoice/${invoiceId}/`;
+            } else {
+                alert('Error creating invoice: ' + result.error);
+            }
+        });
+    };
+</script>
+</body>
+</html>
