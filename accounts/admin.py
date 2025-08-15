@@ -122,7 +122,7 @@ class POSView(UnfoldModelAdminViewMixin, TemplateView):
 # admin.site.get_urls = get_urls
 
 class InventoryAdmin(ModelAdmin):
-    list_display = ('sku','category', 'quantity', 'rate', 'print_label_link')
+    list_display = ('sku','category','expire_date', 'quantity', 'rate', 'print_label_link')
     search_fields = ('sku','quantity','category')
     list_filter = ('sku','category','quantity')
     list_per_page = 10

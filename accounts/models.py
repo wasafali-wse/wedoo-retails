@@ -15,6 +15,7 @@ class Inventory(models.Model):
     )
     date = models.DateField(default=timezone.now)
     sku = models.CharField(max_length=255, unique=True)
+    expire_date = models.DateField(null=True, blank=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=0, default=0)
     rate = models.DecimalField(max_digits=10, decimal_places=0, default=0)
     category = models.CharField(max_length=255, blank=True, null=True , choices=category_choice)
@@ -59,6 +60,7 @@ class Invoice(models.Model):
 class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE)
     sku = models.ForeignKey(Inventory, on_delete=models.CASCADE)
+    
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
     rate = models.DecimalField(max_digits=10, decimal_places=2)
     amount = models.DecimalField(max_digits=10, decimal_places=2)

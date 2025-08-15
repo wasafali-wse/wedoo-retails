@@ -136,6 +136,14 @@ def dashboard_callback(request, context):
     # Total paid in bills (sum of Payment.debit for bills)
     from .models import Payment
     total_paid_bills = Payment.objects.filter(bill__isnull=False, date=today).aggregate(total=Sum('debit'))['total'] or 0
+    
+    first_day_of_month = today.replace(day=1)
+    # Paid in pays this month
+    paid_in_pays_month = Payment.objects.filter(
+        pays__isnull=False,
+        date__gte=first_day_of_month,
+        date__lte=today
+    ).aggregate(total=Sum('debit'))['total'] or 0
 
     # Inventories with less than 10 qty
     low_inventory = Inventory.objects.filter(quantity__lt=10)
@@ -206,7 +214,21 @@ def dashboard_callback(request, context):
             [item.id, item.sku, item.quantity] for item in low_inventory
         ]
     }
+    from datetime import timedelta
+    soon = today + timedelta(days=15)
+    near_expiry_items = Inventory.objects.filter(expire_date__isnull=False, expire_date__lte=soon, expire_date__gte=today)
 
+    near_expiry_table = {
+        "headers": ["ID", "SKU", "Qty", "Expire Date"],
+        "rows": [
+            [item.id, item.sku, item.quantity, item.expire_date] for item in near_expiry_items
+        ]
+    }
+    near_expiry_count = Inventory.objects.filter(
+        expire_date__isnull=False,
+        expire_date__lte=soon,
+        expire_date__gte=today
+    ).count()
     context.update({
         "total_sales": total_sales,
         "total_expenses": total_expenses,
@@ -216,5 +238,8 @@ def dashboard_callback(request, context):
         "last_sales": last_sales,
         "last_sales_table": last_sales_table,
         "low_inventory_table": low_inventory_table,
+        "near_expiry_table": near_expiry_table,
+        "paid_in_pays_month": paid_in_pays_month,
+        "near_expiry_count": near_expiry_count,
     })
     return context

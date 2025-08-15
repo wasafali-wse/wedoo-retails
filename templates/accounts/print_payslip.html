@@ -5,13 +5,102 @@
     <meta charset="UTF-8" />
     <title>Payslip #{{ pays.id }}</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 13px; margin: 0; padding: 0; }
-        header, footer { text-align: center; }
-        .info-box { margin: 10px; }
-        table { width: 95%; margin: 10px auto; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; }
-        th { background-color: #f5f5f5; }
-        @media print { body { margin: 0; } }
+        @page {
+            size: A5 portrait;
+            margin: 5mm;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #111;
+            font-size: 13px;
+            margin: 0px;
+            padding: 5px;
+        }
+        header {
+            margin-bottom: 0px;
+            text-align: center;
+            width: 100%;
+            overflow: hidden;
+        }
+        header img {
+            height: 100px;
+            width: 100%;
+            object-fit:cover;
+        }
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+        }
+        .info-box {
+            width: 100%;
+            padding: 0px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .info-box-2 {
+            width: 100%;
+            height: auto;
+            padding: 0px;
+            box-sizing: border-box;
+            margin: 0px;
+        }
+        .info-box-2 h1 {
+            margin: 0px !important;
+            font-size: 20px;
+            line-height: 0.9;
+            padding: 0px;
+            margin-top: 0;
+            margin-bottom: 0;
+            margin-block-start: 0;
+            margin-block-end: 0;
+        }
+        p {
+            margin: 0px 0px;
+        }
+        table {
+            width: 95%;
+            margin: 10px auto;
+            border-collapse: collapse;
+        }
+        table th,
+        table td {
+            border: 1px solid #000;
+            padding: 1px 10px;
+            text-align: left;
+        }
+        table th {
+            width: 50%;
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        footer {
+            text-align: center;
+            bottom: 0;
+            width: 100%;
+            padding: 0px 0;
+            height :100px;
+        }
+        footer img {
+            height: 75%;
+            width: 90%;
+            object-fit: cover;
+        }
+        footer p {
+            font-size: 14px;
+            margin: 0px 0;
+        }
+        hr {
+            height: 1px;
+            border-radius: 1px;
+            border-color: black;
+            border-style: solid;
+            background-color: black;
+        }
+        @media print {
+            body {
+                margin: 0;
+            }
+        }
     </style>
     <script>
         window.onload = function () {
@@ -22,49 +111,72 @@
 </head>
 <body>
 <header>
-    <img src="{% static 'img/logo.png' %}" alt="Logo" style="height:80px;" />
-    <h2>Payslip</h2>
+    <img src="{% static 'img/logo.png' %}" alt="Top Logo" />
 </header>
 <div class="info-box">
-    <p><strong>Payslip ID:</strong> {{ pays.id }}</p>
-    <p><strong>Date:</strong> {{ pays.date }}</p>
-    <p><strong>Employee:</strong> {{ pays.employee.name }}</p>
-    <p><strong>Contact:</strong> {{ pays.employee.contact }}</p>
-    <p><strong>CNIC:</strong> {{ pays.employee.CNIC }}</p>
-    <p><strong>Address:</strong> {{ pays.employee.address }}</p>
+    <p>
+        Dilshad Sweets Bakers & Nimko.<br>
+        123 Business St, Karachi<br>
+        Phone:+92-123-4567890
+    </p>
 </div>
-<table>
-    <tr>
-        <th>Amount</th>
-        <td>Rs{{ pays.amount }}/=</td>
-    </tr>
-    <tr>
-        <th>Total Paid</th>
-        <td>Rs{{ pays.total_paid }}/=</td>
-    </tr>
-    <tr>
-        <th>Remaining Due</th>
-        <td><strong>Rs{{ pays.remaining_amount }}/=</strong></td>
-    </tr>
-    {% if pays.payment_set.all %}
-    <tr>
-        <th colspan="2" style="text-align:center;">Payments</th>
-    </tr>
-    <tr>
-        <th>Date</th>
-        <th>Debit</th>
-    </tr>
-    {% for payment in pays.payment_set.all %}
-    <tr>
-        <td>{{ payment.date }}</td>
-        <td>Rs{{ payment.debit }}/=</td>
-    </tr>
-    {% endfor %}
-    {% endif %}
+<hr>
+<div class="info-section">
+    <div class="info-box-2">
+        <h1>Employee Payslip<br>
+        Payslip ID:{{ pays.id }}</h1>
+        <p>
+            <strong>Date:</strong> {{ pays.date }}<br>
+            <strong>Employee:</strong> {{ pays.employee.name }}<br>
+            <strong>Contact:</strong> {{ pays.employee.contact }}<br>
+            <strong>CNIC:</strong> {{ pays.employee.CNIC }}<br>
+            <strong>Address:</strong> {{ pays.employee.address }}
+        </p>
+    </div>
+</div>
+<!-- Payslip Details Table -->
+<table style="width: 100%;">
+    <tbody>
+        <tr>
+            <td colspan="3" style="text-align: right;"><strong>Amount</strong></td>
+            <td>Rs{{ pays.amount }}/=</td>
+        </tr>
+        <tr>
+            <td colspan="3" style="text-align: right;"><strong>Total Paid</strong></td>
+            <td>Rs{{ pays.total_paid }}/=</td>
+        </tr>
+        <tr>
+            <td colspan="3" style="text-align: right;"><strong>Remaining Due</strong></td>
+            <td><strong>Rs{{ pays.remaining_amount }}/=</strong></td>
+        </tr>
+        {% if pays.payment_set.all %}
+        <!-- Payments Section Header -->
+        <tr>
+            <th colspan="4" style="text-align:center; background-color:#f5f5f5;">Payments</th>
+        </tr>
+        <tr>
+            <th colspan="2">Date</th>
+            <th>Debit</th>
+            <th>Type</th>
+        </tr>
+        {% for payment in pays.payment_set.all %}
+        <tr>
+            <td colspan="2">{{ payment.date }}</td>
+            <td>
+                {% if payment.debit %}
+                    Rs{{ payment.debit }}/=
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>{{ payment.get_type_display }}</td>
+        </tr>
+        {% endfor %}
+        {% endif %}
+    </tbody>
 </table>
+<hr>
 <footer>
-    <img src="{% static 'img/light.png' %}" alt="Footer Logo" style="height:50px;" />
+    <p>The Software developed by</p>
+    <img src="{% static 'img/light.png' %}" alt="Bottom Logo" />
     <p>Visit us: <a href="https://waheedsons-engineering.com">waheedsons-engineering.com</a></p>
-</footer>
-</body>
-</html>

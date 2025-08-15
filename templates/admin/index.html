@@ -17,18 +17,24 @@
 
 {% if request.user.is_superuser %}
 
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-    {% component "unfold/components/card.html" with title="Total Sales" %}
-        <p class="text-2xl font-semibold">Rs {{ total_sales|floatformat:2 }}</p>
+<div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
+    {% component "unfold/components/card.html" with title="Sales" footer='Amount' %}
+        <p class="text-2xl font-semibold">{{ total_sales|floatformat:0 }}/=</p>
     {% endcomponent %}
-    {% component "unfold/components/card.html" with title="Total Expenses" %}
-        <p class="text-2xl font-semibold">Rs {{ total_expenses|floatformat:2 }}</p>
+    {% component "unfold/components/card.html" with title="Expenses" footer='Amount' %}
+        <p class="text-2xl font-semibold">{{ total_expenses|floatformat:0 }}/=</p>
     {% endcomponent %}
-    {% component "unfold/components/card.html" with title="Paid in Bills" %}
-        <p class="text-2xl font-semibold">Rs {{ total_paid_bills|floatformat:2 }}</p>
+    {% component "unfold/components/card.html" with title="Bills" footer='Amount' %}
+        <p class="text-2xl font-semibold">{{ total_paid_bills|floatformat:0 }}/=</p>
     {% endcomponent %}
-    {% component "unfold/components/card.html" with title="Low Inventory (&lt; 10)" %}
+    {% component "unfold/components/card.html" with title="Pays" footer='Amount' %}
+        <p class="text-2xl font-semibold">{{ paid_in_pays_month|floatformat:0 }}/=</p>
+    {% endcomponent %}
+    {% component "unfold/components/card.html" with title="Low Items" footer='Quantity' %}
         <p class="text-2xl font-semibold">{{ low_inventory|length }}</p>
+    {% endcomponent %}
+    {% component "unfold/components/card.html" with title="Expiries" footer='Quantity' %}
+        <p class="text-2xl font-semibold">{{ near_expiry_count }}</p>
     {% endcomponent %}
 </div>
 
@@ -40,8 +46,11 @@
 
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4  mt-4">
-    {% component "unfold/components/card.html" with title="Recent Sales" %}
+    {% comment %} {% component "unfold/components/card.html" with title="Recent Sales" %}
         {% component "unfold/components/table.html" with table=last_sales_table card_included=1 striped=1 height=250 %}{% endcomponent %}
+    {% endcomponent %} {% endcomment %}
+     {% component "unfold/components/card.html" with title="Near Expiry Items" %}
+        {% component "unfold/components/table.html" with table=near_expiry_table card_included=1 striped=1 height=250 %}{% endcomponent %}
     {% endcomponent %}
     {% component "unfold/components/card.html" with title="Low Inventory Items" %}
         {% component "unfold/components/table.html" with table=low_inventory_table card_included=1 striped=1 height=250 %}{% endcomponent %}

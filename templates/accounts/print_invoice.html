@@ -12,48 +12,60 @@
 
     body {
         font-family: 'Arial', sans-serif;
-        color: #333;
+        color: #111;
         font-size: 13px;
-        margin: 0;
-        padding: 0;
+        margin: 0px;
+        padding: 5px;
     }
 
     header {
-        margin-bottom: 10px;
+        margin-bottom: 0px;
         text-align: center;
+        width: 100%;
+        overflow: hidden;
     }
 
     header img {
-        height: 120px;
+        height: 100px;
+        width: 100%;
+        object-fit:cover;
     }
 
     .info-section {
         display: flex;
         justify-content: space-between;
-        margin: 5px 10px;
+        {% comment %} margin: 5px 10px; {% endcomment %}
     }
 
     .info-box {
-        width: 48%;
-        padding: 4px;
+        width: 100%;
+        padding: 0px;
+
         box-sizing: border-box;
+        text-align: center;
     }
     .info-box-2 {
         width: 100%;
-        padding: 4px;
+        height: auto;
+        padding: 0px;
         box-sizing: border-box;
-        margin-top: 10px;
+        margin: 0px;
+
     }
 
-    .info-box h4 {
-        margin: 0 0 2px;
-        font-size: 15px;
-        border-bottom: 1px solid #ccc;
-        padding-bottom: 4px;
-    }
+    .info-box-2 h1 {
+        margin: 0px !important;
+        font-size: 20px;
+        line-height: 0.9;
+        padding: 0px;
+        margin-top: 0;
+        margin-bottom: 0;
+        margin-block-start: 0;
+        margin-block-end: 0;
+    }   
 
     p {
-        margin: 4px 0;
+        margin: 0px 0px;
     }
 
     table {
@@ -64,8 +76,8 @@
 
     table th,
     table td {
-        border: 1px solid #ddd;
-        padding: 6px 10px;
+        border: 0px solid #000;
+        padding: 1px 10px;
         text-align: left;
     }
 
@@ -77,29 +89,40 @@
 
     footer {
         text-align: center;
-        position: absolute;
+        
         bottom: 0;
         width: 100%;
-        padding: 10px 0;
+        padding: 0px 0;
+        height :100px;
     }
 
     footer img {
-        height: 80px;
+        height: 75%;
+        width: 90%;
+        object-fit: cover;
     }
 
     footer p {
-        font-size: 11px;
-        margin: 4px 0;
+        font-size: 14px;
+        margin: 0px 0;
+    }
+    hr {
+        height: 1px;
+
+        border-radius: 1px;
+        border-color: black;
+        border-style: solid;
+        background-color: black;
     }
 
     @media print {
         body {
             margin: 0;
         }
-        footer {
+        {% comment %} footer {
             position: fixed;
             bottom: 0;
-        }
+        } {% endcomment %}
     }
 </style>
 <script>
@@ -107,7 +130,7 @@
         window.print();
         window.onafterprint = function () {
             window.close();
-        };
+        }; 
     };
 </script>
 </head>
@@ -116,45 +139,43 @@
 <header>
     <img src="{% static 'img/logo.png' %}" alt="Top Logo" />
 </header>
-
+<div class="info-box">
+    <p>
+        Dilshad Sweets Bakers & Nimko.<br>
+        123 Business St, Karachi<br>
+        Phone:+92-123-4567890
+    </p>
+</div>
+<hr>
 <div class="info-section">
-    <div class="info-box">
-        <h4>Customer</h4>
+    <div class="info-box-2">
+        <h1>Sales Invoice<br>
+        Invoice ID:{{ invoice.id }}</h1>
         <p>
-            <strong>ID:</strong> {{ invoice.customer.id }}<br>
-            <strong>Name:</strong> {{ invoice.customer.name }}<br>
-            <strong>Contact:</strong> {{ invoice.customer.contact }}<br>
+            
+            <strong>Customer:</strong> Walk In<br>
+            <strong>Contact:</strong> None<br>
             <strong>Date:</strong> {{ invoice.date }}
         </p>
     </div>
-    <div class="info-box">
-        <h4>Company</h4>
-        <p>
-            <strong>Company:</strong> Your Company Ltd.<br>
-            <strong>Address:</strong> 123 Business St, Karachi<br>
-            <strong>Phone:</strong> +92-123-4567890
-        </p>
-    </div>
+    
 </div>
 <!-- Invoice Details Table -->
 <table style="width: 100%;">
     <!-- Invoice Description -->
     <thead>
         <tr>
-            <th colspan="4">Invoice ID: {{ invoice.id }} | {{ invoice.description|default:"N/A" }}</th>
-        </tr>
-        <tr>
             <th>Description</th>
             <th>Qty</th>
             <th>Rate</th>
             <th>Amount</th>
         </tr>
-    </thead>
+    </thead> 
     <tbody>
         <!-- Invoice Items -->
         {% for item in invoice.invoiceitem_set.all %}
         <tr>
-            <td>{{ item.description }}</td>
+            <td>{{ item.sku }}</td>
             <td>{{ item.quantity }}</td>
             <td>Rs{{ item.rate }}</td>
             <td>Rs{{ item.amount }}</td>
@@ -163,27 +184,16 @@
 
         <!-- Summary Rows -->
         <tr>
-            <td colspan="3" style="text-align: right;"><strong>Gross Amount</strong></td>
-            <td>Rs{{ invoice.gross_amount }}/=</td>
+            <td  colspan="3"><strong>Net Amount</strong></td>
+            <td>Rs{{ invoice.net_amount }}/=</td>
         </tr>
         <tr>
-            <td colspan="3" style="text-align: right;"><strong>Discount</strong></td>
-            <td>Rs{{ invoice.discount }}/=</td>
+            <td  colspan="3"><strong>Paid Amount</strong></td>
+            <td>Rs{{ invoice.total_paid }}.00/=</td>
         </tr>
-        <tr>
-            <td colspan="3" style="text-align: right;"><strong>Net Amount</strong></td>
-            <td><strong>Rs{{ invoice.net_amount }}/=</strong></td>
-        </tr>
-        <tr>
-            <td colspan="3" style="text-align: right;"><strong>Total Paid</strong></td>
-            <td>Rs{{ invoice.total_paid }}/=</td>
-        </tr>
-        <tr>
-            <td colspan="3" style="text-align: right;"><strong>Outstanding Balance</strong></td>
-            <td><strong>Rs{{ invoice.remaining_amount }}/=</strong></td>
-        </tr>
+        
 
-        {% if invoice.payment_set.all %}
+        {% comment %} {% if invoice.payment_set.all %}
         <!-- Payments Section Header -->
         <tr>
             <th colspan="4" style="text-align:center; background-color:#f5f5f5;">Payments</th>
@@ -215,12 +225,18 @@
             </td>
         </tr>
         {% endfor %}
-        {% endif %}
+        {% endif %} {% endcomment %}
     </tbody>
 </table>
+<p>
+    Thanks we are glad to serve you.<br>
+    We hope to see you again.
+</p>
+<hr>
 
 
 <footer>
+    <p>The Software developed by</p>
     <img src="{% static 'img/light.png' %}" alt="Bottom Logo" />
     <p>Visit us: <a href="https://waheedsons-engineering.com">waheedsons-engineering.com</a></p>
 </footer>
